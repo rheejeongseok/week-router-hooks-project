@@ -74,27 +74,49 @@ app.get('/recipe_detail', (req,res) => {
 })
 
 app.get('/chef', (req, res) => {
-    // request = 사용자가 요청한 정보 : page, id, pwd
-    // 요청을 처리
-    // 결과를 전송 = response
     let page = req.query.page;
-    let rowSize = 12;
+    let rowSize = 50;
     let skip = (page * rowSize) - rowSize;
     let url = "mongodb://211.238.142.181:27017";
     client.connect(url,(err,cli)=> {
         let db = cli.db('mydb');
-        // select * from recipe - find({})
-        // select * from recipe where no=1 - find({no:1})
-        // select * from recipe where title like '%값%' - find({'title':{"$regex":"."+값}})
-        /*
-
-        */
         db.collection('chef').find({}).skip(skip).limit(rowSize)
             .toArray((err, docs) => {
-                // 요청한 사용자에게 데이터 전송
                 res.json(docs);
-                console.log(docs)
                 cli.close();
             })
     })
 });
+
+app.get('/chef_total', (req, res) => {
+    let url = "mongodb://211.238.142.181:27017";
+    client.connect(url,(err, cli) => {
+        let db = cli.db('mydb');
+        db.collection('chef').find({}).count((err, count) => {
+            res.json({total:Math.ceil(count/12.0)})
+            cli.close();
+            return count;
+        })
+    })
+});
+
+// xml - json으로
+const xml2js = require("xml2js");
+// request - 외부서버
+const request = require("request");
+
+app.get('/recipe_news', (req, res) => {
+    /*let query = encodeURIComponent(req.query.fd);*/
+    let query = encodeURIComponent("야구");
+    let url = "http://newssearch.naver.com/search.naver?where=rss&query="+query;
+    // xml을 json으로 변경하는 파서기
+    let parser = new xml2js.Parser({
+        explicitArray:false
+    })
+    request({url:url},(err, request,xml) => {
+        parser.parseString(xml, function(err, pjson){
+            console.log(pjson.rss.channel.item)
+        })
+    })
+
+})
