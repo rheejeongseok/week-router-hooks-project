@@ -48,3 +48,53 @@ app.get('/recipe', (req, res) => {
         })
     })
 });
+
+app.get('/recipe_total', (req, res) => {
+   let url = "mongodb://211.238.142.181:27017";
+   client.connect(url,(err, cli) => {
+       let db = cli.db('mydb');
+       db.collection('recipe').find({}).count((err, count) => {
+           res.json({total:Math.ceil(count/12.0)})
+           cli.close();
+           return count;
+       })
+   })
+});
+
+app.get('/recipe_detail', (req,res) => {
+    let no = req.query.no;
+    let url = "mongodb://211.238.142.181:27017";
+    client.connect(url, (err, cli) => {
+        let db = cli.db('mydb');
+        db.collection('recipe_detail').find({no:Number(no)}).toArray((err, docs) => {
+            res.json(docs[0])
+            cli.close();
+        })
+    })
+})
+
+app.get('/chef', (req, res) => {
+    // request = 사용자가 요청한 정보 : page, id, pwd
+    // 요청을 처리
+    // 결과를 전송 = response
+    let page = req.query.page;
+    let rowSize = 12;
+    let skip = (page * rowSize) - rowSize;
+    let url = "mongodb://211.238.142.181:27017";
+    client.connect(url,(err,cli)=> {
+        let db = cli.db('mydb');
+        // select * from recipe - find({})
+        // select * from recipe where no=1 - find({no:1})
+        // select * from recipe where title like '%값%' - find({'title':{"$regex":"."+값}})
+        /*
+
+        */
+        db.collection('chef').find({}).skip(skip).limit(rowSize)
+            .toArray((err, docs) => {
+                // 요청한 사용자에게 데이터 전송
+                res.json(docs);
+                console.log(docs)
+                cli.close();
+            })
+    })
+});
